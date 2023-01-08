@@ -16,7 +16,7 @@ const subscribeMessage = async (channel, service, binding_key) => {
   // to make sure whatever queue we are connecting that queue exists or it'll create that queue
 
   try {
-    const applicationQueue = await channel.assertQueue("QUEUE_NAME");
+    const applicationQueue = await channel.assertQueue("REMINDER_QUEUE");
 
     channel.bindQueue(applicationQueue.queue, EXCHANGE_NAME, binding_key);
 
@@ -32,7 +32,7 @@ const subscribeMessage = async (channel, service, binding_key) => {
 
 const publishMessage = async (channel, binding_key, message) => {
   try {
-    await channel.assertQueue("QUEUE_NAME");
+    await channel.assertQueue("REMINDER_QUEUE");
     await channel.publish(EXCHANGE_NAME, binding_key, Buffer.from(message));
   } catch (error) {
     throw error;

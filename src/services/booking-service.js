@@ -1,7 +1,13 @@
 const axios = require("axios");
 const { BookingRepository } = require("../repository/index");
-const { FLIGHT_SERVICE_PATH } = require("../config/serverConfig");
+const {
+  FLIGHT_SERVICE_PATH,
+  AUTH_SERVICE_PATH,
+} = require("../config/serverConfig");
 const { ServiceError, AppError } = require("../utils/errors");
+
+const { createChannel, publishMessage } = require("../utils/messageQueue");
+const { REMINDER_BINDING_KEY } = require("../config/serverConfig");
 
 class BookingService {
   constructor() {
@@ -34,8 +40,25 @@ class BookingService {
       const finalBooking = await this.bookingRepository.update(booking.id, {
         status: "Booked",
       });
+
+      const userId = data.userId;
+      const getUserRequestURL = `${AUTH_SERVICE_PATH}/api/v1/email/${userId}`;
+      const userResponse = await axios.get(getUserRequestURL);
+      const email = userResponse.data.data;
+      const channel = await createChannel();
+      const payload = {
+        data: {
+          subject: "Booking Confirmation",
+          content: "Your Flights Ticket is confirmed",
+          recipientEmail: email,
+          notificationTime: new Date(),
+        },
+        service: "CREATE_TICKET",
+      };
+      publishMessage(channel, REMINDER_BINDING_KEY, JSON.stringify(payload));
       return finalBooking;
     } catch (error) {
+      console.log(error);
       if (
         error.name === "RepositoryError" ||
         error.name === "ValidationError"
@@ -75,6 +98,22 @@ class BookingService {
       const updatedBooking = await this.bookingRepository.update(booking.id, {
         status: "Canceled",
       });
+
+      const userId = updatedBooking.userId;
+      const getUserRequestURL = `${AUTH_SERVICE_PATH}/api/v1/email/${userId}`;
+      const userResponse = await axios.get(getUserRequestURL);
+      const email = userResponse.data.data;
+      const channel = await createChannel();
+      const payload = {
+        data: {
+          subject: "Booking Confirmation",
+          content: "Your Flights Ticket is cancelled successfully",
+          recipientEmail: email,
+          notificationTime: new Date(),
+        },
+        service: "CREATE_TICKET",
+      };
+      publishMessage(channel, REMINDER_BINDING_KEY, JSON.stringify(payload));
 
       return updatedBooking;
     } catch (error) {

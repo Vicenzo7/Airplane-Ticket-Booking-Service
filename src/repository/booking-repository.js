@@ -8,6 +8,7 @@ class BookingRepository {
       const booking = await Booking.create(data);
       return booking;
     } catch (error) {
+      console.log(error);
       if (error.name === "SequelizeValidationError") {
         throw new ValidationError(error);
       }
@@ -47,7 +48,6 @@ class BookingRepository {
       const booking = await Booking.findByPk(bookingId);
       return booking;
     } catch (error) {
-      
       if (error.name === "SequelizeValidationError") {
         throw new ValidationError(error);
       }
